@@ -1,0 +1,46 @@
+
+name: Build My IPTV APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Extract project
+        run: |
+          unzip -q MyIPTV-Android-Project.zip -d project
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+
+      - name: Build APK
+        run: |
+          DIR=$(find project -name settings.gradle.kts -printf '%h\n' | head -n 1)
+          if [ -z "$DIR" ]; then
+            echo "Gradle project not found"
+            exit 1
+          fi
+          cd "$DIR"
+          gradle assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: My-IPTV-APK
+          path: project/**/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
